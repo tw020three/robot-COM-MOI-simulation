@@ -84,7 +84,7 @@ For θp = 0 and c = (0, 0, −r_p):
 (d × F)_x = m g r_p [ −sinβ cosφ + cosβ sinφ ]  ⇒  τ_servo = m_p g r_p |sin(β − φ)|
 ```
 
-> **Departs from the spec.** The spec writes sin(β + φ). Under this tool's conventions, β > 0 and φ > 0 both mean "toward +y": a pendulum tilted left makes the ball lean left. The lean therefore brings the pendulum back toward world vertical and *reduces* the torque. That gives sin(β − φ). The spec's form is the same physics if φ is measured with the opposite sign.
+> **Same physics as the paper.** Singhal et al. eq. 41 writes the gravity feed-forward as m_p g r_p sin(β + θ), where θ is their lean angle. Their θ has the opposite sign to this tool's φ: a left tilt β makes the ball lean left, which brings the pendulum back toward vertical. So their sin(β + θ) and this tool's sin(β − φ) describe the same torque. The spec's sin(β + φ) used the paper's sign for the lean.
 
 The tool reports two values. The **upright** value (φ = 0) is the worst case, at the start of a manoeuvre. The **leaned** value uses the static lean. The upright value is the one compared with the servo rating and used to cap β_avail.
 
@@ -146,31 +146,64 @@ v_max is the largest v with τ_avail ≥ τ_req, capped at ω_noload·R/N. Becau
 
 **Steady pitch.** θ_ss solves g(K + A cosθ + B sinθ) = τ_req exactly. For a simple pendulum this is asin(τ_req/(m_p g r_p)). It is NaN when gravity can't supply τ_req.
 
-## 6. Turning (spec §5.4) — symbol mapping UNVERIFIED
+## 6. Turning (spec §5.4) — checked against the paper
 
-**Primary model.** Singhal et al. 2023, eq. 29 ([arXiv:2301.06433](https://arxiv.org/abs/2301.06433)), as written in the spec, with ψ̇ = v/R:
+**Primary model.** Singhal et al. 2023, eq. 29 ([arXiv:2301.06433](https://arxiv.org/abs/2301.06433)), with ψ̇ = v/R. The paper writes it as:
+
+```
+ρ = −r_h ( [I_h + (m_p + m_y + m_h) r_h² − m_p r_p r_h] I_h ψ̇² + [I_h + 2I_y] m_p r_p g ) / ( m_p r_p g I_h β )
+```
+
+In this tool's symbols:
 
 ```
 ρ(v,β) = R [ (I_spin + M R² − m_p r_p R) I_spin ψ̇² + I_yaw m_p r_p g ] / ( m_p r_p g I_spin |β| )
 ```
 
-The expression is exactly the sum of its two limits, which the tests check:
+The paper's minus sign only encodes the turn direction. The tool reports magnitudes.
 
-- Low speed: ρ → R·I_yaw/(I_spin·β).
-- High speed: ρ → (I_spin + M R² − m_p r_p R)·v²/(m_p r_p g β R).
+### Symbol mapping (read from the paper, §2.1–2.2 and eq. 9)
 
-**Mapping used.** From the spec: I_h → I_spin, I_h + 2I_y → I_yaw, total mass → M. β is taken as the steering tilt measured from trim, and m_p·r_p as the pendulum group's first moment about its pivot.
+| Paper | Meaning in the paper | This tool |
+|---|---|---|
+| I_h | Hull inertia, isotropic (2/3·m_h·r_h²), spinning with ψ | I_spin, the shell group about the axle |
+| I_h + 2I_y | The yoke tensor is diag(I_y, 2I_y, I_y), and 2I_y is its moment about the vertical, so this is the yaw inertia of hull + yoke. The pendulum lies on the vertical axis at β = 0 and adds nothing. | I_yaw, the whole robot about the vertical through O |
+| m_p + m_y + m_h | Total mass | M |
+| r_h | Sphere radius | R |
+| r_p | Distance from the pendulum CoM to the hull centre (the pivot is at the centre) | r_p, measured from the pivot |
+| β | "Pendulum angle relative to the yoke" | Tilt relative to the body, measured from the trim β₀ |
+| θ | Lean angle of the robot. The pendulum's angle from vertical is β + θ. | −φ: the paper's lean has the opposite sign to this tool's φ |
 
-> **Not verified.** arxiv.org could not be reached from the build environment, so this mapping has not been checked against the paper. Open questions:
-> 1. Is the paper's β the pendulum tilt relative to the body, or the shell's lean?
-> 2. Is I_h + 2I_y really the inertia about the vertical axis in the paper's frames?
-> 3. With a pivot offset, should r_p be measured from the pivot or from O?
->
-> These will be resolved before milestone 3 ships.
+### Validity
 
-**Cross-check model.** Kinematic lean (larics `spherical_robot_model`): the heading rate is (v/R)·tanφ, so ρ = R/tanφ. Here φ is the static lean that the tilt β₀ + β_avail produces.
+- The paper's simplification (§3.1) assumes β is constant, β and θ are small, ψ̇ is constant and dominates φ̇ and θ̇, and the yoke CoM sits at O (r_y = 0).
+- The tool flags β above 15°, the range the paper analyses.
+- Frame-mounted mass offsets and a pivot offset from O are outside the paper's model. With a pivot offset, the tool uses r_p measured from the pivot.
 
-> **Known discrepancy.** The low-speed limit of eq. 29, R·I_yaw/(I_spin·β), depends only on an inertia ratio. The kinematic model depends on the CoM through φ. On the demo preset they differ by roughly 5× (ρ ≈ 1.16 m from eq. 29 vs 0.22 m kinematic, at β_avail ≈ 21° and v = 1 m/s). Both curves will be plotted, and the gap is a reason to read the paper before trusting either.
+### Limits
+
+These are checked by the tests. The full expression is exactly the sum of the two.
+
+- Low speed (eq. 32): ρ → R·I_yaw/(I_spin·β). This is nearly constant in v, as the paper's Fig. 9c shows.
+- High speed (eq. 35): ρ → (I_spin + M R² − m_p r_p R)·v²/(m_p r_p g β R).
+
+### Wobble (eqs. 24–27)
+
+The lean oscillates as θ(t) = A(1 − cos ωt):
+
+```
+K   = I_spin (I_spin + M R² − m_p r_p R)/I_yaw · ψ̇² + m_p r_p g
+|A| = m_p r_p g β / K                         (A → β at low speed, eq. 30)
+ω   = √( K / (I_lean,O + M R² − 2 m_p r_p R) )
+```
+
+I_lean,O = (I_O)_xx of the whole robot. The paper writes this as I_p + I_h + I_y + m_p r_p². The denominator is therefore the lean inertia about the contact point.
+
+The precession (eq. 23) is φ̇_mean = (I_spin/I_yaw)·ψ̇·A. A test confirms that ρ = R·ψ̇/φ̇_mean reproduces eq. 29.
+
+**Cross-check model.** Kinematic lean (larics `spherical_robot_model`): ρ = R/tanφ, where φ is the static lean produced by the tilt β₀ + β_avail.
+
+> The two models differ. With a pendulum-only inner mass, the static lean equals β, so the kinematic model gives ρ ≈ R/β. The paper's low-speed limit is R·I_yaw/(I_spin·β), larger by the ratio I_yaw/I_spin, and at higher speeds it adds the v² term. The paper's model is dynamic: it includes the gyroscopic coupling of eq. 20. The kinematic model is not, so treat it as a sanity bound rather than a prediction.
 
 **Minimum radius:**
 
@@ -178,8 +211,6 @@ The expression is exactly the sum of its two limits, which the tests check:
 ρ_min(v) = max( ρ(v, β_avail), v²/(μ g) )
 β_avail  = min( worst-side authority, servo-limited tilt )
 ```
-
-The servo-limited tilt is the largest Δ for which the upright servo torque at β₀ ± Δ stays at or below the rating. β above 15° is flagged as outside the small-angle validity of the model.
 
 ## 7. Geometry checks
 

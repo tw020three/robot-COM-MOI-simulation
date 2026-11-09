@@ -187,6 +187,8 @@ export interface MassProps {
   pivotWorld: Vec3;
   /** Yaw inertia of the whole robot about the vertical axis through O, at θp = β = ψ = 0 (kg·m²). */
   Iyaw: number;
+  /** Roll ("lean") inertia of the whole robot about the forward axis through O, at θp = β = ψ = 0 (kg·m²). */
+  IleanO: number;
 }
 
 export const ZERO_POSE: PoseConfig = { thetaP: 0, beta: 0, shellRoll: 0 };
@@ -208,7 +210,9 @@ export function computeMassProps(cfg: RobotConfig, pose: PoseConfig = cfg.pose):
   const pendLocal = compositeOf(pendLocalItems);
 
   const zeroItems = posedItems(cfg, { ...ZERO_POSE });
-  const Iyaw = get(compositeOf(zeroItems).inertiaO, 2, 2);
+  const zeroI = compositeOf(zeroItems).inertiaO;
+  const Iyaw = get(zeroI, 2, 2);
+  const IleanO = get(zeroI, 0, 0);
 
   const R = cfg.shell.outerRadius;
   const comOffset = norm(total.com);
@@ -224,7 +228,44 @@ export function computeMassProps(cfg: RobotConfig, pose: PoseConfig = cfg.pose):
     pendulum: { mass: pendC.mass, com: pendC.com, comLocal: pendLocal.com, rP: norm(pendLocal.com) },
     pivotWorld: applyPose(poses.pendulum, [0, 0, 0]),
     Iyaw,
+    IleanO,
   };
+}
+
+/**
+ * Arm length l that puts the pendulum-group CoM at distance r_p from the pivot.
+ * The group first moment is linear in l:  Σ m r = c₀ + l·k  with k = (0, 0, −(m_bob + m_arm/2)),
+ * so |c₀ + l·k| = r_p·m is a quadratic in l; the larger root is returned. null if unreachable.
+ */
+export function armLengthForRp(cfg: RobotConfig, rp: number): number | null {
+  const p = cfg.pendulum;
+  const kz = -((p.included ? p.bobMass : 0) + (p.included && p.armEnabled ? p.armMass / 2 : 0));
+  const c0: Vec3 = [0, 0, 0];
+  let m = (p.included ? p.bobMass : 0) + (p.included && p.armEnabled ? p.armMass : 0);
+  for (const c of cfg.payloads)
+    if (c.mount === 'pendulum' && c.included) {
+      c0[0] += c.mass * c.position[0];
+      c0[1] += c.mass * c.position[1];
+      c0[2] += c.mass * c.position[2];
+      m += c.mass;
+    }
+  if (kz === 0 || m <= 0 || rp < 0) return null;
+  const a = kz * kz, b = 2 * c0[2] * kz, cc = c0[0] ** 2 + c0[1] ** 2 + c0[2] ** 2 - (rp * m) ** 2;
+  const disc = b * b - 4 * a * cc;
+  if (disc < 0) return null;
+  const l = (-b + Math.sqrt(disc)) / (2 * a);
+  return l >= 0 ? l : null;
+}
+
+/**
+ * Uniform solid ellipsoid with the same mass and principal moments (semi-axes along the principal axes):
+ *   a₁² = 5/(2M)·(I₂ + I₃ − I₁), etc.
+ */
+export function equivalentEllipsoid(pr: Principal, M: number): [number, number, number] {
+  const [I1, I2, I3] = pr.moments;
+  const k = M > 0 ? 5 / (2 * M) : 0;
+  const s = (x: number) => Math.sqrt(Math.max(0, k * x));
+  return [s(I2 + I3 - I1), s(I1 + I3 - I2), s(I1 + I2 - I3)];
 }
 
 /**

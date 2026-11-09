@@ -2,7 +2,21 @@
 
 An interactive design tool for a **tilt-steer, pendulum-drive spherical robot**. It computes the robot's combined **center of mass** and **inertia tensor**, then the performance limits that follow from them: pendulum trim, maximum drive torque, slope and step, maximum speed, and minimum turning radius versus speed.
 
-**Status: milestone 1 of 5.** The physics core and its tests are complete. The interactive editor (3D view, panels, charts) comes in milestones 2–4. For now `npm run dev` shows a table of results for the two presets.
+**Status: milestone 2 of 5.** The physics core, 3D editor and live readouts are done. Charts come in milestone 3; sweeps, save/load and export in milestone 4.
+
+## Using the editor
+
+- **Left panel:** the component tree and a property editor. Payloads can be added, duplicated and deleted.
+- **Centre:** the 3D view.
+  - Click an object to select it.
+  - The selected payload or frame box gets a gizmo: move (W), rotate (E) or scale (R). It writes back to the numeric fields.
+  - Drag the **orange handle** on top of the shell to change the outer radius R.
+  - Drag the **red handle** to change the pendulum CoM radius r_p. The tool solves for the arm length.
+  - Sliders set the pendulum pitch θp, the tilt β and the shell roll ψ. The β₀ and θ₀ buttons jump to trim.
+  - The robot is drawn leaned by its static lean, with a plumb line from the CoM to the ground.
+- **Right panel:** live readouts. A value turns red when a limit is exceeded. Hover a row to see its formula.
+- **Undo/redo:** Ctrl+Z and Ctrl+Shift+Z. A whole drag counts as one step.
+- **Display units:** every length is in **mm**, inertia in **kg·mm²** (the CAD convention), angles in degrees, mass in kg. Internally everything is SI.
 
 ```bash
 npm install
@@ -24,14 +38,15 @@ src/physics/   plain TypeScript, no React or three.js imports
   checks.ts             geometry warnings
   sweep.ts              parameter sweeps
   results.ts            computeAll(config) → Results
-src/state/presets.ts    demo bot (placeholders) and RotunBot-like preset
+src/state/             zustand store (config, selection, undo/redo), presets
+src/ui/                React UI: ComponentTree, PropertyPanel, Viewport3D, PoseSliders, Readouts
 tests/                  Vitest
 docs/model.md           derivations, symbol mapping and open questions
 ```
 
 ## Conventions
 
-- **Units:** SI internally (m, kg, s, N·m, rad). The UI will show degrees.
+- **Units:** SI internally (m, kg, s, N·m, rad). The UI shows lengths in mm, inertia in kg·mm² and angles in degrees.
 - **Body frame:** origin O at the shell's center; x forward, y left, z up.
 - **Inertia tensor:** I = Σ m[(r·r)E − r rᵀ], so **products of inertia carry the minus sign**: I_xy = −Σ m·x·y.
 - **Pendulum pitch θp > 0:** the bob swings forward, Ry(−θp). **Tilt β > 0:** the bob swings left, Rx(β). **Shell roll ψ > 0:** forward rolling, Ry(ψ).
@@ -66,12 +81,13 @@ Full derivations are in [`docs/model.md`](docs/model.md).
 | Primitive tensors | sphere 2/5·mR²; thick shell 2/5·m(R⁵−r⁵)/(R³−r³); box m/12(b²+c²); cylinder ½mr², m/12(3r²+h²) | [Wikipedia: List of moments of inertia](https://en.wikipedia.org/wiki/List_of_moments_of_inertia) |
 | Combination | I_O = Σ[RᵢIᵢRᵢᵀ + mᵢ(\|rᵢ\|²E − rᵢrᵢᵀ)]; I_cm = I_O − M(\|r_cm\|²E − r_cm r_cmᵀ) | [LibreTexts: parallel-axis theorem](https://phys.libretexts.org/Bookshelves/Classical_Mechanics/Variational_Principles_in_Classical_Mechanics_(Cline)/13%3A_Rigid-body_Rotation/13.08%3A_Parallel-Axis_Theorem); [Chrono CompositeInertia](https://api.projectchrono.org/classchrono_1_1utils_1_1_composite_inertia.html) |
 | Trim tilt | β₀ = asin(−(S_y + m_p y_piv)/(m_p r_p)) | spec §5.1, generalised in model.md §3 |
-| Servo torque | m_p g r_p \|sin(β − φ)\| (**sign differs from the spec**, see model.md §3) | derived |
+| Servo torque | m_p g r_p \|sin(β − φ)\|, the same torque as the paper's sin(β + θ) with θ = −φ | [Singhal et al. 2023](https://arxiv.org/abs/2301.06433) eq. 41 |
 | Drive torque | τ_g = g Σ_inner m x → m_p g r_p sinθp; τ_max = min(τ_g, Nτ_stall, μMgR) | [PoliTo thesis](https://webthesis.biblio.polito.it/31455/1/tesi.pdf) (not re-read) |
 | Slope, step | sin α = τ_max/(MgR); h = R − √(R² − e²), e = τ_max/(Mg) | [Ylikorpi et al. 2014](https://core.ac.uk/download/80712523.pdf) (not re-read) |
 | Acceleration | a = m_p g r_p sinθ / ((M + I_spin/R²)R − m_p r_p cosθ) | re-derived in model.md §4; [Ylikorpi et al.](https://core.ac.uk/download/80712522.pdf) |
 | Max speed | τ_req = R[c_rr Mg cosα + Mg sinα + ½ρC_dAv²]; τ_avail = min(τ_g, Nτ_stall(1 − Nv/(Rω_nl)), μMgR cosα) | spec §5.3 (+ traction term) |
-| Turning | Singhal et al. eq. 29 (**symbol mapping unverified**); cross-check ρ = R/tanφ | [Singhal et al. 2023](https://arxiv.org/abs/2301.06433); [larics/spherical_robot_model](https://github.com/larics/spherical_robot_model) |
+| Turning | Singhal et al. eq. 29 (mapping checked: I_h → I_spin, I_h + 2I_y → I_yaw); cross-check ρ = R/tanφ | [Singhal et al. 2023](https://arxiv.org/abs/2301.06433); [larics/spherical_robot_model](https://github.com/larics/spherical_robot_model) |
+| Wobble | \|A\| = m_p r_p g β / K, ω = √(K / I_lean,contact) | Singhal et al. eqs. 26–27 |
 
 ## Assumptions and validity
 

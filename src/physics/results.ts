@@ -6,7 +6,7 @@ import { computeDrive, innerMomentModel, type DriveResult } from './drive';
 import { computeMassProps, shellRollWobble, type MassProps } from './massProps';
 import { computeSpeed, type SpeedResult } from './speed';
 import { computeTrim, leanAtBeta, servoTorque, type TrimResult } from './trim';
-import { rhoKinematic, rhoMin, rhoSinghal, SMALL_ANGLE_LIMIT, tractionFloor, type TurnParams } from './turning';
+import { rhoKinematic, rhoMin, rhoSinghal, SMALL_ANGLE_LIMIT, tractionFloor, wobble, type TurnParams } from './turning';
 import type { RobotConfig } from './types';
 
 export interface TurningResult {
@@ -23,6 +23,8 @@ export interface TurningResult {
   /** Kinematic cross-check at β_avail (m). */
   rhoKinematicAtAvail: number;
   outsideSmallAngle: boolean;
+  /** Wobble at the current speed and β_avail (eqs. 26–27). */
+  wobbleAtSpeed: ReturnType<typeof wobble>;
 }
 
 export interface Results {
@@ -41,6 +43,7 @@ export function turnParams(cfg: RobotConfig, mp: MassProps): TurnParams {
     M: mp.total.mass,
     Ispin: mp.Ispin,
     Iyaw: mp.Iyaw,
+    IleanO: mp.IleanO,
     mr: mp.pendulum.mass * mp.pendulum.rP,
     g: cfg.drive.g,
   };
@@ -83,6 +86,7 @@ export function computeTurning(cfg: RobotConfig, mp: MassProps, trim: TrimResult
     tractionAtSpeed,
     rhoKinematicAtAvail: rhoKinematic(cfg.shell.outerRadius, phi),
     outsideSmallAngle: betaAvail > SMALL_ANGLE_LIMIT,
+    wobbleAtSpeed: wobble(params, v, betaAvail),
   };
 }
 

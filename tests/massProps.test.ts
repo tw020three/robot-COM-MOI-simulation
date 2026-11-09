@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeMassProps, shellRollWobble } from '../src/physics/massProps';
+import { armLengthForRp, computeMassProps, equivalentEllipsoid, shellRollWobble } from '../src/physics/massProps';
 import { makePayload } from '../src/physics/payload';
 import { isSymmetric } from '../src/physics/mat3';
 import { thickShellMoment } from '../src/physics/primitives';
@@ -83,5 +83,29 @@ describe('presets', () => {
     const mp = computeMassProps(rotunBotLike());
     expect(mp.total.mass).toBeCloseTo(160, 6);
     expect(mp.total.com[2]).toBeLessThan(0);
+  });
+});
+
+describe('pendulum CoM radius editing', () => {
+  it('armLengthForRp inverts r_p (with arm mass and a pendulum payload)', () => {
+    const c = smallDemoBot();
+    c.payloads.push(makePayload('point', { id: 'pp', name: 'pp', mass: 0.1, position: [0.01, 0, -0.02], mount: 'pendulum' }));
+    const l = armLengthForRp(c, 0.06)!;
+    expect(l).toBeGreaterThan(0);
+    c.pendulum.armLength = l;
+    expect(computeMassProps(c).pendulum.rP).toBeCloseTo(0.06, 12);
+  });
+  it('returns null when unreachable', () => {
+    const c = bareConfig({ mp: 0 });
+    expect(armLengthForRp(c, 0.05)).toBeNull();
+  });
+});
+
+describe('equivalent ellipsoid', () => {
+  it('a solid sphere maps to itself', () => {
+    const c = bareConfig({ mp: 0 });
+    c.payloads = [makePayload('solidSphere', { id: 's', name: 's', mass: 2, shape: { kind: 'solidSphere', radius: 0.05 } })];
+    const mp = computeMassProps(c);
+    equivalentEllipsoid(mp.principal, mp.total.mass).forEach((a) => expect(a).toBeCloseTo(0.05, 12));
   });
 });
