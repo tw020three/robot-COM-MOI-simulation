@@ -2,6 +2,7 @@
  * Presets. Pure data — no React — so the physics tests can use them.
  */
 import { makePayload } from '../physics/payload';
+import { thickShellMoment } from '../physics/primitives';
 import type { RobotConfig } from '../physics/types';
 
 const deg = (d: number) => (d * Math.PI) / 180;
@@ -122,7 +123,51 @@ export function rotunBotLike(): RobotConfig {
   };
 }
 
+/**
+ * GimBall (Aalto University), as published in Ylikorpi, Forsman & Halme 2014, "Dynamic obstacle
+ * overcoming capability of pendulum-driven ball-shaped robots" (nomenclature table):
+ *   ball mass M₁ = 3.39 kg, pendulum mass M₂ = 2.0 kg, ball radius R = 0.226 m,
+ *   pendulum length e = 0.0787 m, ball inertia J₁ = 0.0778 kg·m², contact friction μ = 0.22 (plane).
+ * Modelling choices (not from the paper): M₁ is lumped into the shell, whose wall thickness is solved
+ * so the thick-shell inertia equals J₁; the pendulum is a point mass (its J₂ is not used by the
+ * static/turning formulas); architecture B (only the pendulum pitches, as in the paper's 2-D model).
+ * Drive-motor and servo values are PLACEHOLDERS.
+ * The paper's quasi-static maximum step height for this robot is 0.0018936 m (a regression test).
+ */
+export function gimBall(): RobotConfig {
+  const base = smallDemoBot();
+  const M1 = 3.39, R = 0.226, J1 = 0.0778;
+  // thickShellMoment rises monotonically from 2/5·mR² (solid) to 2/3·mR² (thin) as the inner radius grows
+  let lo = 0, hi = R;
+  for (let i = 0; i < 100; i++) {
+    const mid = 0.5 * (lo + hi);
+    if (thickShellMoment(M1, R, mid) < J1) lo = mid;
+    else hi = mid;
+  }
+  return {
+    ...base,
+    name: 'GimBall (Ylikorpi et al. 2014; drive values placeholder)',
+    architecture: 'B',
+    shell: { ...base.shell, outerRadius: R, thickness: R - lo, mass: M1 },
+    axle: { ...base.axle, mass: 0, radius: 0.006, length: 2 * (R - (R - lo)) - 0.004 },
+    frameBox: { ...base.frameBox, enabled: false },
+    pendulum: {
+      ...base.pendulum,
+      bobMass: 2.0,
+      bobShape: { kind: 'point' },
+      armEnabled: false,
+      armMass: 0,
+      armLength: 0.0787,
+      thetaPMax: deg(90),
+      betaMax: deg(20),
+    },
+    drive: { ...base.drive, mu: 0.22, gearRatio: 20, stallTorque: 0.5, noLoadSpeed: rpm(3000), servoRating: 2, speed: 1 },
+    payloads: [],
+  };
+}
+
 export const PRESETS: { id: string; label: string; make: () => RobotConfig }[] = [
   { id: 'demo', label: 'Small demo bot (placeholders)', make: smallDemoBot },
+  { id: 'gimball', label: 'GimBall (Ylikorpi et al. 2014)', make: gimBall },
   { id: 'rotunbot', label: 'RotunBot-like (Zhang et al. 2025)', make: rotunBotLike },
 ];

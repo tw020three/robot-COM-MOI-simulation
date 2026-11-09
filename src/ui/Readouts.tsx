@@ -80,7 +80,7 @@ export function Readouts() {
       <h3>Drive</h3>
       <Row label="τ_max" value={`${fmt(d.tauMax, 3)} N·m (${d.binding})`} title="min(τ_g(θp,max), N·τ_stall, μ·M·g·R); τ_g = g Σ_inner m x" />
       <Row label="Max slope" value={fmtDeg(d.maxSlope, 1)} title="sin α = τ_max/(M g R)" />
-      <Row label="Max step" value={fmtMM(d.maxStep, 1)} title="h = R − √(R² − e²), e = τ_max/(M g)" />
+      <Row label="Max step (static)" value={fmtMM(d.maxStep, 1)} title="h = R − √(R² − e²), e = τ_max/(M g) — quasi-static lower bound (Ylikorpi et al. 2014 eq. 1). A moving robot clears far more: GimBall 1.9 mm static vs ≈ 40 mm at 1 m/s" />
       <Row label="Max acceleration" value={`${fmt(d.accelAtMax, 3)} m/s² (shell ${fmt(d.accelAtMax / R, 2)} rad/s²)`} title="a = g Σm x / ((M + I_spin/R²) R − Σ m(−z)) at θp,max" />
       <Row label="v_max" value={`${fmt(s.vMax, 3)} m/s, ψ̇ ${fmt(s.vMax / R, 1)} rad/s (${s.binding})`} bad={s.binding === 'cannot move'} title="Largest v with τ_avail ≥ τ_req, capped at ω_noload R / N" />
 

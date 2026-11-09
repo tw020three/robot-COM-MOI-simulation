@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { geometryChecks } from '../src/physics/checks';
 import { makePayload } from '../src/physics/payload';
 import { runSweep, findSweepParam } from '../src/physics/sweep';
-import { rotunBotLike, smallDemoBot } from '../src/state/presets';
+import { gimBall, rotunBotLike, smallDemoBot } from '../src/state/presets';
 import { bareConfig } from './helpers';
 
 describe('sweeps', () => {
@@ -36,5 +36,6 @@ describe('geometry checks', () => {
   it('both presets are clean', () => {
     expect(geometryChecks(smallDemoBot())).toEqual([]);
     expect(geometryChecks(rotunBotLike())).toEqual([]);
+    expect(geometryChecks(gimBall())).toEqual([]);
   });
 });

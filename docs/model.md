@@ -113,7 +113,12 @@ The spec writes τ_g,max here. The tool uses τ_max, which equals τ_g,max whene
 
 - *Slope.* On a slope α, the weight's moment about the contact point is M·g·R·sinα. The drive must supply at least that, so sin α_max = τ_max/(M g R).
 - *Step.* Against a step of height h, the ball pivots about the step edge. The edge sits a horizontal distance d = √(R² − (R − h)²) from the centre, so the weight's moment about the edge is M·g·d. Rolling over needs τ_max ≥ M·g·d, i.e. d ≤ e = τ_max/(M g). That gives h ≤ R − √(R² − e²).
-- *What it ignores.* Both limits are static. A ball arriving with speed can use its kinetic energy to climb more (Ylikorpi et al. 2014 study this "dynamic obstacle overcoming"). Their paper could not be opened from the build environment because core.ac.uk serves a bot check, so it is cited only as further reading.
+- *Checked against the literature.* This is eq. (1) of Ylikorpi, Forsman & Halme 2014, "Dynamic obstacle overcoming capability of pendulum-driven ball-shaped robots", which credits Halme et al. 1996: h_max = R − √(R² − (m r/(M_ball + m))²). It matches the tool's formula with the pendulum horizontal, where e = m_p r_p / M.
+  - The paper reports 0.0018936 m for GimBall (M₁ = 3.39 kg, M₂ = 2.0 kg, R = 0.226 m, e = 0.0787 m).
+  - The tool gives 0.0018946 m from those rounded inputs, 0.05 % apart. This is a regression test, and GimBall is a preset.
+- *What it ignores.* Both limits are static. The same paper shows they are **very conservative for a moving robot**. GimBall's static limit is 1.9 mm, yet in experiments and simulation it crosses about 20 mm at 0.6 m/s and about 40 mm at 1 m/s (their Figs. 5–6). Speed lets the ball carry energy over the edge, and an elevated pendulum helps by up to about 1 cm more.
+  - Their dynamic model needs contact forces and per-robot simulation, and their quick estimate is a cubic fit to GimBall data only.
+  - So the tool reports the static number and labels it as a lower bound. It does not invent a dynamic formula.
 
 ### Planar acceleration with the inner assembly held at θ (verified)
 
@@ -135,7 +140,19 @@ Model: planar motion on flat ground with rolling without slip, x = Rψ. The inne
    ⇒ a = m_p g r_p sinθ / ( (M + I_spin/R²) R − m_p r_p cosθ )
    ```
 
-Step 4 is exactly the spec's formula. The general form, with Σ m x and Σ m(−z) taken over the whole inner assembly, is what the code uses. It covers the spec's "architecture A: use the inner assembly's first moment about O".
+Step 4 is exactly the spec's formula.
+
+*Checked against the literature.* Ylikorpi, Forsman, Halme & Saarinen 2014, "Unified representation of decoupled dynamic models for pendulum-driven ball-shaped robots", give the Lagrangian (eqs. 3–4) with ball inertia J₁ about the centre and the pendulum at an absolute angle. The motor torque enters as τ/R on the ball coordinate and τ on the pendulum. Their main point is that the reaction torque must reach the ball exactly once.
+
+Holding the pendulum angle constant reduces their equations to:
+
+```
+(M₁ + J₁/R² + M₂) ẍ = τ/R ,   τ = M₂ e (ẍ cosφ + g sinφ)
+```
+
+That is identical to step 4, with J₁ → I_spin and M₂ e → m_p r_p. A test checks it with their GimBall parameters (M₁ = 3.294 kg, M₂ = 1.795 kg, R = 0.226 m, e = 0.065 m, J₁ = 0.0633 kg·m²).
+
+Note that this J₁ is below 2/5·M₁R². The paper's "ball" mass therefore includes internals near the centre that add mass but little spin inertia. In this tool, that is a shell carrying J₁ plus frame-mounted mass at O. The general form, with Σ m x and Σ m(−z) taken over the whole inner assembly, is what the code uses. It covers the spec's "architecture A: use the inner assembly's first moment about O".
 
 *Check:* with a massless shell and M = m_p, it gives a = g r sinθ / (R − r cosθ).
 
