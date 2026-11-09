@@ -130,5 +130,5 @@ Full derivations are in [`docs/model.md`](docs/model.md).
 - **Traction term:** μMgR·cosα is included in τ_avail for v_max, consistent with τ_max (model.md §5).
 - **Slope and step limits:** computed from τ_max (all limits), not τ_g,max alone. They are equal whenever gravity binds.
 - **Sweep tool:** shipped in milestone 3, because charts 3–5 need it.
-- **Not built:** STL import (a stretch goal).
+- **Not built:** STL import (a stretch goal). Deferred; not needed for now.
 - **Playback view:** shown as an animated top-view chart rather than inside the 3D viewport. This keeps the editor responsive. The same data exports as CSV.
