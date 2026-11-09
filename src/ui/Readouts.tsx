@@ -4,7 +4,7 @@ import type { Mat3 } from '../physics/mat3';
 import { SMALL_ANGLE_LIMIT } from '../physics/turning';
 import { useStore } from '../state/store';
 import { useResults } from './hooks';
-import { fmt, fmtDeg, fmtMM, toKgMM2, toMM } from './units';
+import { fmt, fmtDeg, fmtInertia, fmtMM, fmtSig, toMM } from './units';
 
 function Row({ label, value, bad, warn, title }: { label: ReactNode; value: ReactNode; bad?: boolean; warn?: boolean; title?: string }) {
   return (
@@ -20,14 +20,14 @@ function Row({ label, value, bad, warn, title }: { label: ReactNode; value: Reac
 
 function Tensor({ m, label }: { m: Mat3; label: string }) {
   return (
-    <div className="tensor" title={`${label}, kg·mm². Products of inertia carry the minus sign: I_xy = −Σ m·x·y`}>
-      <div className="tensor-label">{label} [kg·mm²]</div>
+    <div className="tensor" title={`${label}, kg·m². Products of inertia carry the minus sign: I_xy = −Σ m·x·y`}>
+      <div className="tensor-label">{label} [kg·m²]</div>
       <table>
         <tbody>
           {[0, 1, 2].map((r) => (
             <tr key={r}>
               {[0, 1, 2].map((c) => (
-                <td key={c}>{fmt(toKgMM2(m[r * 3 + c]), 1)}</td>
+                <td key={c}>{fmtSig(m[r * 3 + c])}</td>
               ))}
             </tr>
           ))}
@@ -53,10 +53,10 @@ export function Readouts() {
       <Row label="Vertical offset z_cm" value={fmtMM(z, 2)} bad={z >= 0} title="Must be negative (below O) for the pendulum drive to work" />
       <Tensor m={m.total.inertiaCom} label="I about CoM" />
       <Tensor m={m.total.inertiaO} label="I about O" />
-      <Row label="Principal moments" value={m.principal.moments.map((v) => fmt(toKgMM2(v), 1)).join(', ') + ' kg·mm²'} title="Jacobi eigen-decomposition of I_cm" />
+      <Row label="Principal moments" value={m.principal.moments.map((v) => fmtSig(v)).join(', ') + ' kg·m²'} title="Jacobi eigen-decomposition of I_cm" />
       <Row label="Radii of gyration" value={m.principal.gyration.map((v) => fmt(toMM(v), 1)).join(', ') + ' mm'} title="k = √(I/M)" />
-      <Row label="I_spin (shell group, y)" value={`${fmt(toKgMM2(m.Ispin), 1)} kg·mm²`} title="Shell + shell-mounted parts about the axle. Singhal et al.: I_h" />
-      <Row label="I_yaw (vertical, O)" value={`${fmt(toKgMM2(m.Iyaw), 1)} kg·mm²`} title="Whole robot about z through O at θp = β = ψ = 0. Singhal et al.: I_h + 2I_y" />
+      <Row label="I_spin (shell group, y)" value={fmtInertia(m.Ispin)} title="Shell + shell-mounted parts about the axle. Singhal et al.: I_h" />
+      <Row label="I_yaw (vertical, O)" value={fmtInertia(m.Iyaw)} title="Whole robot about z through O at θp = β = ψ = 0. Singhal et al.: I_h + 2I_y" />
       <Row label="Pendulum m_p, r_p" value={`${fmt(m.pendulum.mass, 3)} kg, ${fmtMM(m.pendulum.rP, 1)}`} title="Pendulum group (bob + arm + pendulum payloads); r_p = pivot → group CoM" />
       <Row label="Shell-roll CoM wobble" value={`x ±${fmtMM(r.wobble.x.amplitude, 2)}, z ±${fmtMM(r.wobble.z.amplitude, 2)}`} title="CoM excursion over one shell revolution (shell-mounted parts off the axle)" />
 
@@ -81,15 +81,18 @@ export function Readouts() {
       <Row label="τ_max" value={`${fmt(d.tauMax, 3)} N·m (${d.binding})`} title="min(τ_g(θp,max), N·τ_stall, μ·M·g·R); τ_g = g Σ_inner m x" />
       <Row label="Max slope" value={fmtDeg(d.maxSlope, 1)} title="sin α = τ_max/(M g R)" />
       <Row label="Max step" value={fmtMM(d.maxStep, 1)} title="h = R − √(R² − e²), e = τ_max/(M g)" />
-      <Row label="Max acceleration" value={`${fmt(d.accelAtMax, 3)} m/s²`} title="a = g Σm x / ((M + I_spin/R²) R − Σ m(−z)) at θp,max" />
-      <Row label="v_max" value={`${fmt(s.vMax, 3)} m/s (${s.binding})`} bad={s.binding === 'cannot move'} title="Largest v with τ_avail ≥ τ_req, capped at ω_noload R / N" />
+      <Row label="Max acceleration" value={`${fmt(d.accelAtMax, 3)} m/s² (shell ${fmt(d.accelAtMax / R, 2)} rad/s²)`} title="a = g Σm x / ((M + I_spin/R²) R − Σ m(−z)) at θp,max" />
+      <Row label="v_max" value={`${fmt(s.vMax, 3)} m/s, ψ̇ ${fmt(s.vMax / R, 1)} rad/s (${s.binding})`} bad={s.binding === 'cannot move'} title="Largest v with τ_avail ≥ τ_req, capped at ω_noload R / N" />
 
       <h3>Turning at v = {fmt(cfg.drive.speed, 2)} m/s</h3>
       <Row label="β_avail" value={`${fmtDeg(tu.betaAvail, 1)} (${tu.betaAvailLimitedBy})`} warn={tu.betaAvail > SMALL_ANGLE_LIMIT} title="Smaller remaining tilt from trim, capped by the servo rating. Above 15° the small-angle model is outside its validity" />
       <Row label="ρ_min" value={fmtMM(tu.rhoMinAtSpeed, 0)} title="max(ρ_eq29(v, β_avail), v²/(μ g)) — Singhal et al. 2023 eq. 29" />
       <Row label="  eq. 29 / traction floor" value={`${fmtMM(tu.rhoModelAtSpeed, 0)} / ${fmtMM(tu.tractionAtSpeed, 0)}`} />
       <Row label="  kinematic cross-check" value={fmtMM(tu.rhoKinematicAtAvail, 0)} title="ρ = R / tan φ (larics decoupled model)" />
-      <Row label="Wobble amplitude, freq." value={`${fmtDeg(tu.wobbleAtSpeed.amplitude, 2)}, ${fmt(tu.wobbleAtSpeed.frequencyHz, 2)} Hz`} title="Singhal et al. eqs. 26–27" />
+      <Row label="Spin rate ψ̇ = v/R" value={`${fmt(cfg.drive.speed / R, 2)} rad/s`} />
+      <Row label="Wobble amplitude" value={fmtDeg(tu.wobbleAtSpeed.amplitude, 2)} title="|A| = m_p r_p g β / K — Singhal et al. eq. 26" />
+      <Row label="Wobble frequency ω" value={`${fmt(tu.wobbleAtSpeed.omega, 2)} rad/s (${fmt(tu.wobbleAtSpeed.frequencyHz, 2)} Hz)`} title="ω = √(K / I_lean,contact) — Singhal et al. eq. 27" />
+      <Row label="Precession rate φ̇" value={`${fmt(tu.wobbleAtSpeed.precession, 3)} rad/s`} title="φ̇_mean = (I_spin/I_yaw) ψ̇ A — Singhal et al. eq. 23" />
 
       <h3>Geometry ({r.warnings.length ? `${r.warnings.length} warning${r.warnings.length > 1 ? 's' : ''}` : 'OK'})</h3>
       {r.warnings.length === 0 ? (
@@ -103,7 +106,7 @@ export function Readouts() {
           ))}
         </ul>
       )}
-      <div className="hint">R = {fmtMM(R, 1)}. Lengths in mm, inertia in kg·mm².</div>
+      <div className="hint">R = {fmtMM(R, 1)}. Lengths in mm; inertia kg·m²; speed m/s; angular speed rad/s; acceleration m/s².</div>
     </div>
   );
 }

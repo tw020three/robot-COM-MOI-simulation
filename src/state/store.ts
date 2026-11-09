@@ -22,6 +22,16 @@ export interface ViewOptions {
 
 export const ROBOT_ID = '__robot';
 
+/** Sweep settings for charts 3–5 (SI values; `key` from listSweepParams). Not part of undo history. */
+export interface SweepSettings {
+  key: string;
+  from: number;
+  to: number;
+  steps: number;
+}
+
+export type ChartTab = 'turning' | 'torque' | 'trim' | 'com' | 'principal' | 'pitch';
+
 interface State {
   config: RobotConfig;
   selection: string;
@@ -31,6 +41,10 @@ interface State {
   gesture: boolean;
   /** Incremented whenever a whole config is loaded (preset, file); the viewport refits the camera. */
   loadCount: number;
+  sweep: SweepSettings | null;
+  chartTab: ChartTab;
+  setSweep: (s: SweepSettings | null) => void;
+  setChartTab: (t: ChartTab) => void;
   update: (fn: (c: RobotConfig) => RobotConfig) => void;
   setConfig: (c: RobotConfig) => void;
   beginGesture: () => void;
@@ -51,6 +65,10 @@ export const useStore = create<State>((set, get) => ({
   future: [],
   gesture: false,
   loadCount: 0,
+  sweep: null,
+  chartTab: 'turning',
+  setSweep: (sweep) => set({ sweep }),
+  setChartTab: (chartTab) => set({ chartTab }),
   update: (fn) => {
     const { config, gesture, past } = get();
     const next = fn(config);

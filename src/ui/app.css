@@ -45,10 +45,29 @@ input, select { font: inherit; }
 .right { grid-area: right; border-left: 1px solid var(--border); }
 .center { grid-area: center; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .viewport { position: relative; flex: 1; min-height: 0; }
-.charts-panel { height: 160px; border-top: 1px solid var(--border); background: var(--panel); }
-.tabs { display: flex; gap: 4px; padding: 4px 8px; border-bottom: 1px solid var(--border); }
-.tab { padding: 2px 8px; border-radius: 4px; }
-.tab.active { background: #eef2ff; color: var(--accent); }
+.charts-panel { background: var(--panel); min-height: 0; flex: none; }
+.splitter { height: 6px; cursor: row-resize; background: var(--border); flex: none; }
+.splitter:hover { background: #b9c3d0; }
+.charts-panel-inner { display: flex; flex-direction: column; height: 100%; }
+.tabs { display: flex; gap: 4px; padding: 4px 8px; border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center; }
+.tab { padding: 2px 8px; border-radius: 4px; border: 1px solid transparent; background: transparent; }
+.tab.active { background: #eef2ff; color: var(--accent); border-color: #c7d2fe; }
+.chart-body { flex: 1; min-height: 0; }
+.chart { display: flex; flex-direction: column; height: 100%; padding: 4px 8px 0; }
+.chart-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.chart-title { font-weight: 600; }
+.chart-actions { margin-left: auto; display: flex; gap: 4px; }
+.chart-note { color: var(--muted); font-size: 11px; margin: 2px 0; }
+.chart-plot { flex: 1; min-height: 0; }
+.bad-text { color: var(--bad); }
+.sweep-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.sweep-field { display: inline-flex; gap: 4px; align-items: center; color: var(--muted); }
+.sweep-field input { width: 76px; padding: 1px 4px; border: 1px solid var(--border); border-radius: 3px; text-align: right; }
+.sweep-field select { max-width: 220px; }
+.data-table { flex: 1; overflow: auto; min-height: 0; }
+.data-table table { border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 11px; }
+.data-table th { position: sticky; top: 0; background: #f5f7fa; text-align: right; padding: 3px 6px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.data-table td { text-align: right; padding: 2px 6px; border-bottom: 1px solid #f0f1f3; }
 .charts-placeholder { padding: 16px; color: var(--muted); }
 
 h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 14px 0 6px; }

@@ -2,7 +2,7 @@
 
 An interactive design tool for a **tilt-steer, pendulum-drive spherical robot**. It computes the robot's combined **center of mass** and **inertia tensor**, then the performance limits that follow from them: pendulum trim, maximum drive torque, slope and step, maximum speed, and minimum turning radius versus speed.
 
-**Status: milestone 2 of 5.** The physics core, 3D editor and live readouts are done. Charts come in milestone 3; sweeps, save/load and export in milestone 4.
+**Status: milestone 3 of 5.** The physics core, 3D editor, live readouts and all six charts (with parameter sweeps) are done. Milestone 4 adds JSON save/load, CSV export of the results and polish of presets.
 
 ## Using the editor
 
@@ -15,8 +15,17 @@ An interactive design tool for a **tilt-steer, pendulum-drive spherical robot**.
   - Sliders set the pendulum pitch θp, the tilt β and the shell roll ψ. The β₀ and θ₀ buttons jump to trim.
   - The robot is drawn leaned by its static lean, with a plumb line from the CoM to the ground.
 - **Right panel:** live readouts. A value turns red when a limit is exceeded. Hover a row to see its formula.
+- **Charts** (bottom panel, drag the divider to resize):
+  1. Turning radius vs speed: eq. 29 at β = 5°, 10°, 15° and β_avail; ρ_min in bold; the traction floor; the kinematic cross-check; v_max; log axis. Tilts beyond 15° are shaded as outside the small-angle model.
+  2. Available vs required torque, with each limit and the v_max point.
+  3. Trim tilt β₀ vs a swept parameter, with the ±β_max band.
+  4. CoM x, y, z and |offset| vs a swept parameter.
+  5. Principal moments vs a swept parameter.
+  6. Drive torque and slope limit vs pendulum pitch (two stacked panels).
+
+  Charts 3–5 share a sweep: pick any numeric input (e.g. `Battery.position.y`, `Pendulum.armLength`, `Pendulum.mass`), a range and a step count. Every output is recomputed at each step. Each chart has **Table**, **CSV** and **PNG** buttons. CSV columns are SI with the unit in the header.
 - **Undo/redo:** Ctrl+Z and Ctrl+Shift+Z. A whole drag counts as one step.
-- **Display units:** every length is in **mm**, inertia in **kg·mm²** (the CAD convention), angles in degrees, mass in kg. Internally everything is SI.
+- **Display units:** geometric lengths (positions, sizes, R, r_p, CoM, step height, turning radius) in **mm**; angles in degrees; everything else SI: inertia **kg·m²**, mass kg, speed **m/s**, angular speed **rad/s**, acceleration **m/s²**, angular acceleration **rad/s²**, torque N·m.
 
 ```bash
 npm install
@@ -46,7 +55,7 @@ docs/model.md           derivations, symbol mapping and open questions
 
 ## Conventions
 
-- **Units:** SI internally (m, kg, s, N·m, rad). The UI shows lengths in mm, inertia in kg·mm² and angles in degrees.
+- **Units:** SI internally (m, kg, s, N·m, rad). The UI shows lengths in mm and angles in degrees; inertia, speeds and accelerations stay SI.
 - **Body frame:** origin O at the shell's center; x forward, y left, z up.
 - **Inertia tensor:** I = Σ m[(r·r)E − r rᵀ], so **products of inertia carry the minus sign**: I_xy = −Σ m·x·y.
 - **Pendulum pitch θp > 0:** the bob swings forward, Ry(−θp). **Tilt β > 0:** the bob swings left, Rx(β). **Shell roll ψ > 0:** forward rolling, Ry(ψ).

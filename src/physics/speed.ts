@@ -117,9 +117,9 @@ export function computeSpeed(cfg: RobotConfig, mp: MassProps = computeMassProps(
 }
 
 /** Torque-vs-speed samples for chart 2. */
-export function torqueVsSpeed(cfg: RobotConfig, n = 121, mp: MassProps = computeMassProps(cfg)) {
+export function torqueVsSpeed(cfg: RobotConfig, n = 121, mp: MassProps = computeMassProps(cfg), vEndIn?: number) {
   const c = speedContext(cfg, mp);
-  const vEnd = Math.max(vNoLoadCap(c), 0.1) * 1.05;
+  const vEnd = vEndIn ?? Math.max(vNoLoadCap(c), 0.1) * 1.05;
   return Array.from({ length: n }, (_, i) => {
     const v = (vEnd * i) / (n - 1);
     const req = tauRequired(c, v);
