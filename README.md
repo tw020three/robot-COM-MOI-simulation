@@ -4,6 +4,57 @@ An interactive design tool for a **tilt-steer, pendulum-drive spherical robot**.
 
 **Status: all five milestones complete:** the physics core, 3D editor, live readouts, six charts with parameter sweeps, presets, save/load, CSV export, and time-domain playback.
 
+## Getting started
+
+**You need:** [Node.js](https://nodejs.org/) 22.12 or newer (it includes npm) and Git. It runs in any current desktop browser with WebGL (Chrome, Edge, Firefox, Safari).
+
+```bash
+git clone https://github.com/tw020three/robot-COM-MOI-simulation.git
+cd robot-COM-MOI-simulation
+npm install          # once, installs dependencies
+npm run dev          # starts the app
+```
+
+Then open **http://localhost:5173** in your browser. The page reloads by itself when you edit the code. Stop the server with Ctrl+C.
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Development server at http://localhost:5173 |
+| `npm test` | Runs the physics test suite (Vitest) |
+| `npm run build` | Strict type-check, then a static build into `dist/` |
+| `npm run preview` | Serves the built `dist/` locally to check it |
+
+**Hosting it.** `dist/` is a plain static site with relative paths, so it can be served from any static host or sub-folder (GitHub Pages, Netlify, an internal web server). For example, `npx serve dist` serves it locally. Opening `dist/index.html` directly from disk (`file://`) will not work, because browsers block module scripts there; serve it over HTTP instead.
+
+## Quick start: a first design in ten minutes
+
+1. **Pick a starting point.** Use the **Preset** menu (top right): the *Small demo bot*, *GimBall* (a published robot) or *RotunBot-like*. Your last robot is also restored automatically when you reopen the page.
+2. **Size the shell.** Select **Shell** in the left tree and type R, wall thickness and mass. Or drag the **orange handle** on top of the ball in the 3D view.
+3. **Set the pendulum.** Select **Pendulum** and enter the bob mass (fixed), the shape and the limits θp,max and β_max. Drag the **red handle** to move its CoM radius r_p; the arm length follows.
+4. **Add payloads.** Use **Add → + payload…** (battery, PCB, motors …). Choose the mount:
+   - *frame* pitches with θp in architecture A;
+   - *pendulum* pitches and tilts;
+   - *shell* spins with the roll ψ.
+
+   Place a payload by typing a position in mm, or click it in the 3D view and drag the gizmo (W move, E rotate, R scale).
+5. **Read the result.** The right panel updates live:
+   - mass, CoM, inertia tensors, principal moments;
+   - trim angles β₀ and θ₀, static lean, servo torque;
+   - drive limits (τ_max, slope, step, v_max);
+   - turning radius and wobble.
+
+   Red means a limit is exceeded. Hover any row for its formula, and fix any **Geometry** warnings at the bottom (parts outside the shell, collisions).
+6. **Trim it.** Press **β₀** or **θ₀** beside the pose sliders to put the pendulum at trim, so the ball rolls straight. If the readout says *cannot trim*, a payload is too far off-centre for the pendulum.
+7. **Enter the drive.** Select **Robot & drive settings** and fill in the gear ratio, motor stall torque, no-load speed, servo rating, friction and rolling resistance. v_max, τ_max and the binding limit update.
+8. **Explore with charts.** In the bottom panel (drag the divider to resize):
+   - chart 1 shows the turning radius vs speed;
+   - chart 2 shows where torque runs out;
+   - charts 3–5 sweep any input, e.g. `Battery.position.y` from −40 to 40 mm, and plot trim, CoM and inertia across it;
+   - chart 7 animates a turn.
+9. **Save your work.** **Save** downloads the robot as a JSON file and **Load…** opens one. **Results CSV** and **Components CSV** export the numbers for a spreadsheet. Each chart has its own **CSV** and **PNG** buttons.
+
+Undo/redo works everywhere (Ctrl+Z / Ctrl+Shift+Z).
+
 ## Using the editor
 
 - **Left panel:** the component tree and a property editor. Payloads can be added, duplicated and deleted.
@@ -39,13 +90,6 @@ An interactive design tool for a **tilt-steer, pendulum-drive spherical robot**.
   - *GimBall:* published masses and geometry from Ylikorpi et al. 2014; drive values are placeholders.
   - *RotunBot-like:* masses from Zhang et al. 2025; frame and drive estimated.
 - **Display units:** geometric lengths (positions, sizes, R, r_p, CoM, step height, turning radius) in **mm**; angles in degrees; everything else SI: inertia **kg·m²**, mass kg, speed **m/s**, angular speed **rad/s**, acceleration **m/s²**, angular acceleration **rad/s²**, torque N·m.
-
-```bash
-npm install
-npm test         # Vitest, physics core
-npm run dev      # dev server
-npm run build    # strict type-check + static build into dist/
-```
 
 ## Layout
 
