@@ -109,6 +109,12 @@ e = τ_max / (M g),   h_max = R − √(R² − e²)
 
 The spec writes τ_g,max here. The tool uses τ_max, which equals τ_g,max whenever gravity is the binding term, so a motor or traction limit also caps the slope.
 
+**Derivation (quasi-static, no momentum).**
+
+- *Slope.* On a slope α, the weight's moment about the contact point is M·g·R·sinα. The drive must supply at least that, so sin α_max = τ_max/(M g R).
+- *Step.* Against a step of height h, the ball pivots about the step edge. The edge sits a horizontal distance d = √(R² − (R − h)²) from the centre, so the weight's moment about the edge is M·g·d. Rolling over needs τ_max ≥ M·g·d, i.e. d ≤ e = τ_max/(M g). That gives h ≤ R − √(R² − e²).
+- *What it ignores.* Both limits are static. A ball arriving with speed can use its kinetic energy to climb more (Ylikorpi et al. 2014 study this "dynamic obstacle overcoming"). Their paper could not be opened from the build environment because core.ac.uk serves a bot check, so it is cited only as further reading.
+
 ### Planar acceleration with the inner assembly held at θ (verified)
 
 Model: planar motion on flat ground with rolling without slip, x = Rψ. The inner assembly is held at a fixed world pitch θ, so it translates without rotating. Let T be the motor torque on the shell (forward, about +y), and F the ground friction on the shell (+x).

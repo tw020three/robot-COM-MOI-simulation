@@ -26,8 +26,8 @@ input, select { font: inherit; }
 .app {
   display: grid;
   grid-template-columns: 300px 1fr 340px;
-  grid-template-rows: auto 1fr;
-  grid-template-areas: 'top top top' 'left center right';
+  grid-template-rows: auto auto 1fr;
+  grid-template-areas: 'top top top' 'banner banner banner' 'left center right';
   height: 100vh;
 }
 .topbar {
@@ -140,3 +140,8 @@ h4 { font-size: 12px; margin: 10px 0 4px; color: var(--muted); }
 .handle-label { font-weight: 600; border: 1px solid #ddd; }
 .marker-label.strong { font-weight: 700; }
 .marker-label.small { font-size: 10px; background: transparent; }
+
+.banner { grid-area: banner; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 6px 12px; border-bottom: 1px solid var(--border); }
+.banner.error { background: var(--bad-bg); color: var(--bad); }
+.banner.info { background: #eef6ee; color: #1b5e20; }
+.banner button { border: none; background: transparent; font-size: 16px; color: inherit; }

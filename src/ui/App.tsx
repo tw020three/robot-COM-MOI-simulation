@@ -1,5 +1,6 @@
 import { lazy, Suspense, useRef, useState } from 'react';
 import { ComponentTree } from './ComponentTree';
+import { FileMenu, MessageBanner } from './FileMenu';
 import { PoseSliders, Toolbar } from './PoseSliders';
 import { PropertyPanel } from './PropertyPanel';
 import { Readouts } from './Readouts';
@@ -33,8 +34,10 @@ export function App() {
       <header className="topbar">
         <h1>Spherical robot · CoM &amp; inertia</h1>
         <span className="robot-name">{name}</span>
+        <FileMenu />
         <Toolbar />
       </header>
+      <MessageBanner />
       <aside className="left">
         <ComponentTree />
         <PropertyPanel />

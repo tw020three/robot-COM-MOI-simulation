@@ -4,16 +4,10 @@ import type { Data, Layout } from 'plotly.js-dist-min';
 import createPlotlyComponent from 'react-plotly.js/factory';
 import { useRef, useState, type ReactNode } from 'react';
 import { toCSV, type Table } from '../../physics/curves';
+import { download } from '../download';
 
 const PlotlyPlot = createPlotlyComponent(Plotly);
 
-function download(name: string, blob: Blob) {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = name;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-}
 
 export function Chart({
   id, title, data, layout, table, note, controls,

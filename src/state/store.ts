@@ -7,7 +7,31 @@
  */
 import { create } from 'zustand';
 import type { RobotConfig } from '../physics/types';
+import { parseConfig, serializeConfig } from './io';
 import { smallDemoBot } from './presets';
+
+/** Browser-local autosave (per-viewer convenience only; files are the real persistence). */
+const AUTOSAVE_KEY = 'spherical-robot-sim:autosave';
+function restore(): RobotConfig {
+  try {
+    const t = localStorage.getItem(AUTOSAVE_KEY);
+    if (t) return parseConfig(t).config;
+  } catch {
+    /* storage blocked or stale/invalid save: fall back to the demo */
+  }
+  return smallDemoBot();
+}
+let saveTimer: ReturnType<typeof setTimeout> | undefined;
+function autosave(c: RobotConfig) {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(AUTOSAVE_KEY, serializeConfig(c));
+    } catch {
+      /* ignore */
+    }
+  }, 500);
+}
 
 export type GizmoMode = 'translate' | 'rotate' | 'scale';
 
@@ -43,6 +67,9 @@ interface State {
   loadCount: number;
   sweep: SweepSettings | null;
   chartTab: ChartTab;
+  /** Message banner (load errors, notes). */
+  message: { kind: 'error' | 'info'; text: string } | null;
+  setMessage: (m: State['message']) => void;
   setSweep: (s: SweepSettings | null) => void;
   setChartTab: (t: ChartTab) => void;
   update: (fn: (c: RobotConfig) => RobotConfig) => void;
@@ -58,7 +85,7 @@ interface State {
 const HISTORY_LIMIT = 200;
 
 export const useStore = create<State>((set, get) => ({
-  config: smallDemoBot(),
+  config: restore(),
   selection: ROBOT_ID,
   view: { showLean: true, showPrincipal: true, showEllipsoid: false, showSubComs: true, showLabels: true, gizmoMode: 'translate' },
   past: [],
@@ -67,6 +94,8 @@ export const useStore = create<State>((set, get) => ({
   loadCount: 0,
   sweep: null,
   chartTab: 'turning',
+  message: null,
+  setMessage: (message) => set({ message }),
   setSweep: (sweep) => set({ sweep }),
   setChartTab: (chartTab) => set({ chartTab }),
   update: (fn) => {
@@ -96,3 +125,7 @@ export const useStore = create<State>((set, get) => ({
   select: (id) => set({ selection: id }),
   setView: (v) => set((s) => ({ view: { ...s.view, ...v } })),
 }));
+
+useStore.subscribe((s, prev) => {
+  if (s.config !== prev.config) autosave(s.config);
+});
