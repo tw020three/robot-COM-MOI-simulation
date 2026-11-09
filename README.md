@@ -6,16 +6,64 @@ An interactive design tool for a **tilt-steer, pendulum-drive spherical robot**.
 
 ## Getting started
 
-**You need:** [Node.js](https://nodejs.org/) 22.12 or newer (it includes npm) and Git. It runs in any current desktop browser with WebGL (Chrome, Edge, Firefox, Safari).
+**Easiest: use it online.** Open **https://tw020three.github.io/robot-COM-MOI-simulation/** in Chrome, Edge or Firefox. There is nothing to install. The rest of this section is only for running it on your own computer.
 
-```bash
+### Run it on Windows
+
+1. **Install Node.js.** Download the **LTS** installer from https://nodejs.org/ (version 22.12 or newer) and run it with the default options. Then **close and reopen** any terminal windows, so they can find the new `node` and `npm` commands.
+2. **Get the code.** Pick one of these:
+   - **Without Git:** on the GitHub page, click **Code → Download ZIP**. Unzip it (right-click → *Extract All…*), for example into `Documents`.
+   - **With Git** ([Git for Windows](https://git-scm.com/download/win)): run `git clone https://github.com/tw020three/robot-COM-MOI-simulation.git`.
+3. **Open a terminal in the project folder.** Open the folder in File Explorer (the one containing `package.json`). Click the address bar, type `cmd`, and press Enter. A Command Prompt opens already in the right folder.
+4. **Check Node.** Type each line below and press Enter after each. They should print a version (`v22.x` or newer) and a number.
+
+   ```
+   node -v
+   npm -v
+   ```
+
+5. **Install the dependencies.** Do this once. It takes a minute or two.
+
+   ```
+   npm install
+   ```
+
+6. **Start the app.**
+
+   ```
+   npm run dev
+   ```
+
+7. Open **http://localhost:5173** in your browser. Leave the terminal window open while you use the app, and press **Ctrl+C** in it to stop.
+
+Next time, only steps 3, 6 and 7 are needed.
+
+### Run it on macOS or Linux
+
+Install Node.js 22.12 or newer from https://nodejs.org/ (or with your package manager), then run:
+
+```
 git clone https://github.com/tw020three/robot-COM-MOI-simulation.git
 cd robot-COM-MOI-simulation
-npm install          # once, installs dependencies
-npm run dev          # starts the app
+npm install
+npm run dev
 ```
 
-Then open **http://localhost:5173** in your browser. The page reloads by itself when you edit the code. Stop the server with Ctrl+C.
+Then open **http://localhost:5173**.
+
+### Troubleshooting
+
+| What you see | What to do |
+|---|---|
+| `'node'` or `'npm' is not recognized as an internal or external command` | Node.js isn't installed, or the terminal was opened before installing it. Install it (step 1), then close and reopen the terminal. |
+| `npm.ps1 cannot be loaded because running scripts is disabled on this system` (PowerShell) | Use Command Prompt instead (step 3), or run `npm.cmd install` and `npm.cmd run dev`. To fix PowerShell permanently, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once. |
+| `EBADENGINE`, `Unsupported engine`, or *"Vite requires Node.js version 20.19+ or 22.12+"* | Node is too old. Install the current LTS from nodejs.org and reopen the terminal. |
+| `ENOENT: no such file or directory, open '…\package.json'` | The terminal is in the wrong folder. Open it in the folder that contains `package.json` (step 3). With a ZIP download this is often one level deeper, e.g. `robot-COM-MOI-simulation-main\robot-COM-MOI-simulation-main`. |
+| `Cannot find module '@rolldown/binding-win32-x64-msvc'` or another *native binding* error | Delete the `node_modules` folder, then run `npm install` again. If it persists, also delete `package-lock.json` before reinstalling. |
+| `Port 5173 is in use` | Another copy is still running. Close its terminal, or use the address Vite prints instead. |
+| The page is blank | Use a current Chrome, Edge or Firefox, with hardware acceleration (WebGL) turned on. Press F12 → *Console* and send the red error text. |
+
+### Commands
 
 | Command | What it does |
 |---|---|
