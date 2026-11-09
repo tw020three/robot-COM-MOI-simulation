@@ -2,7 +2,7 @@
 
 An interactive design tool for a **tilt-steer, pendulum-drive spherical robot**. It computes the robot's combined **center of mass** and **inertia tensor**, then the performance limits that follow from them: pendulum trim, maximum drive torque, slope and step, maximum speed, and minimum turning radius versus speed.
 
-**Status: milestones 1–4 of 5 complete.** The physics core, 3D editor, live readouts, six charts with parameter sweeps, presets, save/load and CSV export are done. Milestone 5 (optional) is time-domain playback.
+**Status: all five milestones complete:** the physics core, 3D editor, live readouts, six charts with parameter sweeps, presets, save/load, CSV export, and time-domain playback.
 
 ## Using the editor
 
@@ -22,6 +22,10 @@ An interactive design tool for a **tilt-steer, pendulum-drive spherical robot**.
   4. CoM x, y, z and |offset| vs a swept parameter.
   5. Principal moments vs a swept parameter.
   6. Drive torque and slope limit vs pendulum pitch (two stacked panels).
+  7. **Playback:** an animated top view of a steady turn, integrated with RK4 from Singhal et al. eqs. 20–22.
+     - The closed-form eq. 29 circle is overlaid, with the simulated and closed-form radii side by side.
+     - A lean-vs-time trace is checked against the predicted wobble amplitude and frequency.
+     - You set β and v. Play, pause and scrub, with a CSV of the time series.
 
   Charts 3–5 share a sweep: pick any numeric input (e.g. `Battery.position.y`, `Pendulum.armLength`, `Pendulum.mass`), a range and a step count. Every output is recomputed at each step. Each chart has **Table**, **CSV** and **PNG** buttons. CSV columns are SI with the unit in the header.
 - **Undo/redo:** Ctrl+Z and Ctrl+Shift+Z. A whole drag counts as one step.
@@ -58,6 +62,7 @@ src/physics/   plain TypeScript, no React or three.js imports
   results.ts            computeAll(config) → Results
   curves.ts             chart data tables + CSV
   report.ts             results / components CSV export
+  playback.ts           RK4 integration of Singhal eqs. 20–22 for the playback tab
 src/state/             zustand store (config, selection, undo/redo, autosave), presets, io.ts (JSON save/load + validation)
 src/ui/                React UI: ComponentTree, PropertyPanel, Viewport3D, PoseSliders, Readouts, FileMenu, charts/
 tests/                  Vitest
@@ -108,6 +113,7 @@ Full derivations are in [`docs/model.md`](docs/model.md).
 | Max speed | τ_req = R[c_rr Mg cosα + Mg sinα + ½ρC_dAv²]; τ_avail = min(τ_g, Nτ_stall(1 − Nv/(Rω_nl)), μMgR cosα) | spec §5.3 (+ traction term) |
 | Turning | Singhal et al. eq. 29 (mapping checked: I_h → I_spin, I_h + 2I_y → I_yaw); cross-check ρ = R/tanφ | [Singhal et al. 2023](https://arxiv.org/abs/2301.06433); [larics/spherical_robot_model](https://github.com/larics/spherical_robot_model) |
 | Wobble | \|A\| = m_p r_p g β / K, ω = √(K / I_lean,contact) | Singhal et al. eqs. 26–27 |
+| Playback | RK4 on φ̈ = (I_spin/I_yaw)ψ̇θ̇; I_lean,c θ̈ + (I_spin + MR² − m_p r_p R)φ̇ψ̇ + m_p r_p g(β+θ) = 0; ψ̈ = 0; rolling constraints | Singhal et al. eqs. 12–13, 20–22 (path radius within 2 % of eq. 29, test) |
 
 ## Assumptions and validity
 
@@ -124,4 +130,5 @@ Full derivations are in [`docs/model.md`](docs/model.md).
 - **Traction term:** μMgR·cosα is included in τ_avail for v_max, consistent with τ_max (model.md §5).
 - **Slope and step limits:** computed from τ_max (all limits), not τ_g,max alone. They are equal whenever gravity binds.
 - **Sweep tool:** shipped in milestone 3, because charts 3–5 need it.
-- **Not built:** STL import (a stretch goal) and time-domain playback (milestone 5, optional).
+- **Not built:** STL import (a stretch goal).
+- **Playback view:** shown as an animated top-view chart rather than inside the 3D viewport. This keeps the editor responsive. The same data exports as CSV.

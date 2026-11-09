@@ -242,3 +242,39 @@ These are warnings only and never block anything.
 - **Outside the shell:** the farthest point of each object from O is compared with the shell's inner radius. This is exact for boxes (8 corners) and uses 24 sampled rim points for cylinders.
 - **Pendulum sweep:** a 5 × 5 grid over ±θp,max × ±β_max. At each point the pendulum parts are checked against the shell and against non-pendulum objects using bounding spheres. A slender arm is treated as a line segment.
 - **Overlaps:** bounding spheres at the current pose. The axle is excluded, since everything hangs from it.
+
+## 8. Time-domain playback (milestone 5)
+
+`src/physics/playback.ts` integrates the simplified equations of Singhal et al. 2023 with fixed-step RK4. The step is at most 1/60 of the wobble period and at most 5 ms.
+
+```
+φ̈ = I_spin/I_yaw · ψ̇ θ̇                                              (20)
+I_lean,c θ̈ + (I_spin + M R² − m_p r_p R) φ̇ ψ̇ + m_p r_p g (β + θ) = 0  (21)
+ψ̈ = 0                                                                 (22)
+Ẋ = R(θ̇ sinφ − ψ̇ cosφ cosθ),   Ż = R(θ̇ cosφ + ψ̇ sinφ cosθ)          (12–13)
+```
+
+Here I_lean,c = I_lean,O + M R² − 2 m_p r_p R.
+
+**Frames and signs.** Read from the paper's Figs. 2–3:
+
+- The paper's ground frame has X forward and Y up, so Z points to the right of travel. The tool reports y = −Z, which is left.
+- The paper's β > 0 swings the pendulum toward −Z (left), the same as this tool. Its lean θ > 0 tilts the top toward +Z (right), so θ = −φ_lean.
+- A positive heading rate φ̇ is a left turn. With ψ̇ = −v/R the robot rolls toward +X.
+
+The tests confirm that a left tilt leans left and turns left.
+
+**Checks** (tests/playback.test.ts, demo and GimBall presets):
+
+- The mean path radius, distance travelled ÷ heading change, matches eq. 29 within 2 %.
+- The lean follows θ = A(1 − cos ωt): its mean is |A| within 5 %, its peak is 2|A|, and its frequency is ω within 2 % (eqs. 25–27).
+- β = 0 gives a straight line.
+
+**Limits.** The playback inherits every simplification of eqs. 20–22:
+
+- β is constant; β and θ are small.
+- ψ̇ is constant and dominates φ̇ and θ̇.
+- The yoke CoM is at O.
+- There are no drive or traction limits and no damping, so the wobble never decays.
+
+It shows the closed-form turning model in motion. It is not a full multibody simulation.

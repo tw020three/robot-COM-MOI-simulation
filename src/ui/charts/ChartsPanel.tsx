@@ -13,6 +13,7 @@ import { useStore, type ChartTab, type SweepSettings } from '../../state/store';
 import { useResults } from '../hooks';
 import { fmt, toDeg } from '../units';
 import { Chart } from './Plot';
+import { Playback } from './Playback';
 import { BAND, baseLayout, finite, INK, REF, SERIES } from './theme';
 
 const mm = (a: number[]) => finite(a.map((v) => v * 1000));
@@ -290,6 +291,7 @@ const TABS: { id: ChartTab; label: string }[] = [
   { id: 'com', label: '4 · CoM sweep' },
   { id: 'principal', label: '5 · Principal moments sweep' },
   { id: 'pitch', label: '6 · Drive vs pitch' },
+  { id: 'playback', label: '7 · Playback' },
 ];
 
 export default function ChartsPanel() {
@@ -301,6 +303,7 @@ export default function ChartsPanel() {
   if (tab === 'turning') body = <TurningChart cfg={cfg} r={r} />;
   else if (tab === 'torque') body = <TorqueChart cfg={cfg} r={r} />;
   else if (tab === 'pitch') body = <PitchChart cfg={cfg} r={r} />;
+  else if (tab === 'playback') body = <Playback />;
   else body = <SweepCharts tab={tab} cfg={cfg} />;
   return (
     <div className="charts-panel-inner">

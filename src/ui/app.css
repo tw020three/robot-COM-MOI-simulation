@@ -145,3 +145,12 @@ h4 { font-size: 12px; margin: 10px 0 4px; color: var(--muted); }
 .banner.error { background: var(--bad-bg); color: var(--bad); }
 .banner.info { background: #eef6ee; color: #1b5e20; }
 .banner button { border: none; background: transparent; font-size: 16px; color: inherit; }
+
+.playback .pb-body { flex: 1; min-height: 0; display: flex; gap: 12px; padding-bottom: 6px; }
+.pb-top { flex: 1; min-width: 0; height: 100%; border: 1px solid var(--border); border-radius: 4px; }
+.pb-side { width: 420px; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+.pb-lean { width: 100%; height: auto; max-height: 100%; }
+.pb-stats { border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.pb-stats td { padding: 1px 8px 1px 0; }
+.pb-stats td:first-child { color: var(--muted); }
+.playback input[type='range'] { width: 160px; }

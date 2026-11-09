@@ -54,7 +54,7 @@ export interface SweepSettings {
   steps: number;
 }
 
-export type ChartTab = 'turning' | 'torque' | 'trim' | 'com' | 'principal' | 'pitch';
+export type ChartTab = 'turning' | 'torque' | 'trim' | 'com' | 'principal' | 'pitch' | 'playback';
 
 interface State {
   config: RobotConfig;
