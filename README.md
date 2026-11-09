@@ -24,7 +24,15 @@ Then open **http://localhost:5173** in your browser. The page reloads by itself 
 | `npm run build` | Strict type-check, then a static build into `dist/` |
 | `npm run preview` | Serves the built `dist/` locally to check it |
 
-**Hosting it.** `dist/` is a plain static site with relative paths, so it can be served from any static host or sub-folder (GitHub Pages, Netlify, an internal web server). For example, `npx serve dist` serves it locally. Opening `dist/index.html` directly from disk (`file://`) will not work, because browsers block module scripts there; serve it over HTTP instead.
+**Online version.** Every push to `main` is tested, built and published by GitHub Actions (`.github/workflows/deploy-pages.yml`) to:
+
+**https://tw020three.github.io/robot-COM-MOI-simulation/**
+
+Nothing to install: open the link in a desktop browser. Your robot is autosaved in that browser; use **Save** for a file you can keep or share.
+
+*One-time setup (repository owner):* Settings → Pages → Build and deployment → Source: **GitHub Actions**. Then push to `main`, or run the workflow by hand from the Actions tab (*Deploy to GitHub Pages* → *Run workflow*). If the repository is private, Pages may need a paid GitHub plan, and the site follows GitHub's Pages visibility rules.
+
+**Hosting it elsewhere.** `dist/` is a plain static site with relative paths, so it can be served from any static host or sub-folder (GitHub Pages, Netlify, an internal web server). For example, `npx serve dist` serves it locally. Opening `dist/index.html` directly from disk (`file://`) will not work, because browsers block module scripts there; serve it over HTTP instead.
 
 ## Quick start: a first design in ten minutes
 
